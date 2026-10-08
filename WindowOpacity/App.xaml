@@ -1,0 +1,9 @@
+<Application x:Class="WindowOpacity.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" ShutdownMode="OnExplicitShutdown">
+    <Application.Resources><ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries><ResourceDictionary Source="UI/ThemeStyles.xaml"/></ResourceDictionary.MergedDictionaries>
+        <SolidColorBrush x:Key="Surface" Color="#FFF0F3F8"/>
+        <SolidColorBrush x:Key="Text" Color="#FF202735"/>
+        <SolidColorBrush x:Key="Hover" Color="#403E8FF5"/>
+        <LinearGradientBrush x:Key="GlassSurface" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#F5F8FAFF" Offset="0"/><GradientStop Color="#DCDFE7F4" Offset="1"/></LinearGradientBrush>
+    </ResourceDictionary></Application.Resources>
+</Application>

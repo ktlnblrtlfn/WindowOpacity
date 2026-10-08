@@ -1,0 +1,8 @@
+<UserControl x:Class="WindowOpacity.UI.OpacitySymbol" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Name="Symbol" Width="20" Height="20" Focusable="False" IsHitTestVisible="False">
+    <Viewbox Stretch="Uniform">
+        <Grid Width="20" Height="20">
+            <Path Data="M 10,1 A 9,9 0 0 0 10,19 Z" Fill="{Binding Foreground, ElementName=Symbol}"/>
+            <Ellipse Margin="1" Stroke="{Binding Foreground, ElementName=Symbol}" StrokeThickness="1.4"/>
+        </Grid>
+    </Viewbox>
+</UserControl>

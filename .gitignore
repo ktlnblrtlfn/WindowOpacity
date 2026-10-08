@@ -1,0 +1,12 @@
+graft/
+**/bin/
+**/obj/
+.vs/
+artifacts/
+
+AGENTS.md
+opencode.json
+.ignore
+*.user
+*.suo
+*.pdb

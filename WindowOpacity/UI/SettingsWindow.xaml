@@ -1,0 +1,31 @@
+<Window x:Class="WindowOpacity.UI.SettingsWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ui="clr-namespace:WindowOpacity.UI" Title="WindowOpacity · Settings" Width="480" Height="760" MinWidth="440" MinHeight="560" Background="{DynamicResource Surface}" Foreground="{DynamicResource Text}" FontFamily="Segoe UI" WindowStartupLocation="CenterScreen" UseLayoutRounding="True" SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Display">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="26">
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,6"><ui:OpacitySymbol Width="28" Height="28" Margin="0,0,12,0"/><TextBlock Text="WindowOpacity" FontSize="25" FontWeight="SemiBold" VerticalAlignment="Center"/></StackPanel>
+            <TextBlock Text="A little more room to see through." Foreground="{DynamicResource Muted}" Margin="0,0,0,22"/>
+            <Border Style="{StaticResource SettingsCard}"><StackPanel>
+                <TextBlock Text="Transparency" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <CheckBox x:Name="ShowButton" Content="Show transparency button"/>
+                <DockPanel Margin="0,10,0,4"><TextBlock Text="Minimum opacity" DockPanel.Dock="Left"/><TextBlock x:Name="MinimumLabel" HorizontalAlignment="Right" Foreground="{DynamicResource Muted}"/></DockPanel>
+                <Slider x:Name="Minimum" Minimum="20" Maximum="95" TickFrequency="5" IsSnapToTickEnabled="True" Margin="0,4,0,8"/>
+                <CheckBox x:Name="Remember" Content="Remember opacity per application"/>
+                <CheckBox x:Name="Wheel" Content="Enable mouse wheel opacity control"/>
+            </StackPanel></Border>
+            <Border Style="{StaticResource SettingsCard}"><StackPanel>
+                <TextBlock Text="Behavior" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <CheckBox x:Name="Startup" Content="Run at startup"/>
+                <CheckBox x:Name="Minimized" Content="Start minimized"/>
+                <CheckBox x:Name="Maximized" Content="Show on maximized windows"/>
+                <CheckBox x:Name="Fullscreen" Content="Disable in fullscreen applications"/>
+            </StackPanel></Border>
+            <Border Style="{StaticResource SettingsCard}"><StackPanel>
+                <TextBlock Text="Excluded applications" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                <ListBox x:Name="Excluded" Height="84" Background="Transparent" Foreground="{DynamicResource Text}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" Padding="5"/>
+                <WrapPanel Margin="0,8,0,0"><Button x:Name="Add" Content="Add current application" Padding="12,8"/><Button x:Name="Remove" Content="Remove" Padding="12,8" Margin="8,4,0,4"/></WrapPanel>
+            </StackPanel></Border>
+            <TextBlock Text="Emergency reset: Ctrl + Alt + Shift + O" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,0,0,10"/>
+            <TextBlock x:Name="Status" TextWrapping="Wrap" Margin="0,0,0,8"/>
+            <WrapPanel><Button x:Name="Save" Content="Save" Background="{DynamicResource Accent}" Foreground="White" BorderThickness="0" Padding="24,9"/><Button x:Name="Reset" Content="Reset all settings" Margin="10,4,0,4"/></WrapPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>
