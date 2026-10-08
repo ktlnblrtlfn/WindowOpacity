@@ -73,3 +73,5 @@ Queries run on a background MTA worker, with at most one pending query; they can
 - Background shadow renders independently of text; text uses Display formatting and layout rounding. The translucent panel does not implement desktop backdrop blur.
 
 These checks supplement the earlier integration run. The full hardware/application matrix is still untested.
+
+Release privacy verification: Release builds disable debug symbols and CodeView/PDB paths. The rebuilt self-contained EXE was inspected after decompressing all 448 bundle entries: no local username, Glass-Windows build path, settings.json, logs, or PDB files. Identity (14) and recovery (9) checks passed after the change.
