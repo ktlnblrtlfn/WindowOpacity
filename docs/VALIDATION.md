@@ -75,3 +75,14 @@ Queries run on a background MTA worker, with at most one pending query; they can
 These checks supplement the earlier integration run. The full hardware/application matrix is still untested.
 
 Release privacy verification: Release builds disable debug symbols and CodeView/PDB paths. The rebuilt self-contained EXE was inspected after decompressing all 448 bundle entries: no local username, Glass-Windows build path, settings.json, logs, or PDB files. Identity (14) and recovery (9) checks passed after the change.
+
+## 2026-10-24: caption click recovery
+
+- Live WindowOpacity process was responsive; ChatGPT caption geometry matched its visible overlay. The reported physical-click failure was not consistently reproduced by synthetic input.
+- Added protection against transient foreground activation of the overlay/popup losing the target. Stable overlay bounds are no longer reapplied on every safety refresh, avoiding unnecessary native window repositioning during mouse capture.
+- Caption toggling rejects stale targets and emits a local PopupOpened diagnostic (HWND only; no window text).
+- Added a native held-mouse-click regression crossing the two-second safety timer: popup opens, focus stays on the fixture, and a second click closes it.
+- Release build passed with no warnings/errors. Identity: 14 assertions; recovery: 9; classic/WPF integration: 43 (WPF renderer rejects layering safely).
+- Published local self-contained EXE passed four live native click/focus assertions on the existing ChatGPT window. Only WindowOpacity was gracefully restarted; target applications stayed open. Startup path and user settings were preserved.
+- Privacy audit decompressed all 448 bundle entries: no local username/build paths, app PDB reference, bundled PDB or settings file. No GitHub release was changed for this repair.
+- User confirmed after deployment that clicking the icon with their own mouse now opens the menu. The exact original intermittent trigger was not conclusively isolated.

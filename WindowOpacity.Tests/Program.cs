@@ -71,6 +71,7 @@ internal static class Program
     [DllImport("user32.dll", SetLastError = true)] static extern uint SendInput(uint count, Input[] inputs, int size);
     [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] static extern bool GetCursorPos(out System.Drawing.Point point);
+    [DllImport("user32.dll")] static extern IntPtr WindowFromPoint(System.Drawing.Point point);
     static void EmergencyKeys()
     {
         var keys = new ushort[] { 0x11, 0x12, 0x10, 0x4F };
@@ -217,6 +218,51 @@ internal static class Program
             return IdentityTests.Run();
         if (args.Length == 1 && args[0] == "recovery")
             return RecoveryTests.Run();
+        if (args.Length == 2 && args[0] == "click-verify-overlay")
+        {
+            var h = new IntPtr(long.Parse(args[1]));
+            var previous = NativeMethods.GetForegroundWindow();
+            GetCursorPos(out var cursor);
+            try
+            {
+                if (!Foreground(h)) throw new InvalidOperationException("Target cannot be activated.");
+                Pump(1800);
+                NativeMethods.GetWindowRect(h, out var window);
+                var bounds = System.Threading.Tasks.Task.Run(() => AccessibilityCaptionLocator.TryReadVerifiedBounds(h, window, out _, out var b) ? b : throw new InvalidOperationException("Caption not verified.")).GetAwaiter().GetResult();
+                var point = new System.Drawing.Point((bounds.Left + bounds.Right) / 2, (bounds.Top + bounds.Bottom) / 2);
+                var hit = WindowFromPoint(point);
+                NativeMethods.GetWindowThreadProcessId(hit, out var pid);
+                using var process = Process.GetProcessById((int)pid);
+                Console.WriteLine($"hit={hit:X}, process={process.ProcessName}, foreground={NativeMethods.GetForegroundWindow():X}");
+                if (process.ProcessName != "WindowOpacity") throw new InvalidOperationException("Icon is not hit-testable; refusing to click another application.");
+                if (Windows(pid).Any(w => NativeMethods.IsWindowVisible(w) && NativeMethods.GetWindowRect(w, out var r) && r.Width > 250 && r.Height > 200))
+                {
+                    var control = AutomationElement.FromHandle(hit).FindFirst(TreeScope.Descendants, new PropertyCondition(AutomationElement.AutomationIdProperty, "Control"));
+                    ((InvokePattern)control.GetCurrentPattern(InvokePattern.Pattern)).Invoke();
+                    Pump(150);
+                }
+                var before = Windows(pid).Where(NativeMethods.IsWindowVisible).ToHashSet();
+                foreach (var item in before) { NativeMethods.GetWindowRect(item, out var r); Console.WriteLine($"before={item:X} {r.Left},{r.Top} {r.Width}x{r.Height}"); }
+                SetCursorPos(point.X, point.Y);
+                Pump(80);
+                if (WindowFromPoint(point) != hit) throw new InvalidOperationException("Pointer target changed; click cancelled.");
+                Assert(SendInput(1, new[] { new Input { MouseFlags = 2 } }, 40) == 1, "real overlay mouse down accepted");
+                Pump(150);
+                Assert(SendInput(1, new[] { new Input { MouseFlags = 4 } }, 40) == 1, "real overlay mouse up accepted");
+                Pump(650);
+                var after = Windows(pid).Where(NativeMethods.IsWindowVisible).ToHashSet();
+                foreach (var item in after) { NativeMethods.GetWindowRect(item, out var r); Console.WriteLine($"after={item:X} {r.Left},{r.Top} {r.Width}x{r.Height}"); }
+                Console.WriteLine($"visibleBefore={before.Count}, visibleAfter={after.Count}, foreground={NativeMethods.GetForegroundWindow():X}");
+                Assert(after.Except(before).Any(), "real overlay click opens popup");
+                Assert(NativeMethods.GetForegroundWindow() == h, "real click preserves target focus");
+                return 0;
+            }
+            finally
+            {
+                SetCursorPos(cursor.X, cursor.Y);
+                if (NativeMethods.IsWindow(previous)) Foreground(previous);
+            }
+        }
         if (args.Length == 2 && args[0] == "activate-verify-overlay")
         {
             var target = new IntPtr(long.Parse(args[1]));
@@ -384,6 +430,24 @@ internal static class Program
             Pump();
             Assert(overlay.IsVisible, kind + " restore shows");
             var popup = System.Windows.Application.Current.Windows.OfType<OpacityPopup>().Single();
+            GetCursorPos(out var cursor);
+            try
+            {
+                NativeMethods.GetWindowRect(overlay.Handle, out var clickBounds);
+                var clickPoint = new System.Drawing.Point((clickBounds.Left + clickBounds.Right) / 2, (clickBounds.Top + clickBounds.Bottom) / 2);
+                SetCursorPos(clickPoint.X, clickPoint.Y);
+                Pump(80);
+                Assert(WindowFromPoint(clickPoint) == overlay.Handle, kind + " real click hits overlay");
+                Assert(SendInput(1, new[] { new Input { MouseFlags = 2 } }, 40) == 1, kind + " real mouse down");
+                Pump(2100); // Cross a safety timer tick while the button owns mouse capture.
+                Assert(SendInput(1, new[] { new Input { MouseFlags = 4 } }, 40) == 1, kind + " real mouse up");
+                Pump(150);
+                Assert(popup.IsVisible, kind + " real held click opens popup across safety refresh");
+                Assert(NativeMethods.GetForegroundWindow() == h, kind + " real held click preserves focus");
+                ((System.Windows.Controls.Button)overlay.FindName("Control")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+                Assert(!popup.IsVisible, kind + " second icon click closes popup");
+            }
+            finally { SendInput(1, new[] { new Input { MouseFlags = 4 } }, 40); SetCursorPos(cursor.X, cursor.Y); }
             locator.TryGetTransparencyButtonBounds(h, out button);
             popup.ShowFor(h, button, 100, 20);
             Pump();

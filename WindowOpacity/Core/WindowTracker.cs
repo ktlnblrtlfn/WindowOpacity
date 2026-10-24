@@ -34,7 +34,7 @@ public sealed class WindowTracker : IDisposable
         log = l;
         filter = new(s, o, l);
         dismiss = new(d, ClosePopup, l);
-        overlay.OpenRequested += () => { if (target != IntPtr.Zero) { if (popup.IsVisible) { ClosePopup(); return; } popup.ShowFor(target, anchor, opacity.GetOpacity(target), s.Value.MinimumOpacity); dismiss.Start(popup.Handle, anchor); } };
+        overlay.OpenRequested += TogglePopup;
         overlay.ResetRequested += Reset;
         overlay.WheelRequested += delta => { if (s.Value.EnableMouseWheel) Apply(opacity.GetOpacity(target) + delta); };
         popup.ValueChanged += Apply;
@@ -54,6 +54,30 @@ public sealed class WindowTracker : IDisposable
         var foreground = NativeMethods.GetForegroundWindow();
         if (target != IntPtr.Zero && NativeMethods.IsWindow(target) && (foreground == overlay.Handle || foreground == popup.Handle))
             NativeMethods.SetForegroundWindow(target);
+    }
+    void TogglePopup()
+    {
+        if (target == IntPtr.Zero || !NativeMethods.IsWindow(target))
+            return;
+        var foreground = NativeMethods.GetForegroundWindow();
+        if (foreground == overlay.Handle || foreground == popup.Handle)
+            RestoreTargetFocus();
+        else if (foreground != target)
+        {
+            RequestUpdate();
+            return;
+        }
+        if (popup.IsVisible)
+        {
+            ClosePopup();
+            return;
+        }
+        popup.ShowFor(target, anchor, opacity.GetOpacity(target), settings.Value.MinimumOpacity);
+        if (popup.IsVisible)
+        {
+            dismiss.Start(popup.Handle, anchor);
+            log.Write("PopupOpened", target);
+        }
     }
     void SettingsChanged()
     {
@@ -84,6 +108,16 @@ public sealed class WindowTracker : IDisposable
     void Update()
     {
         var foreground = NativeMethods.GetForegroundWindow();
+        // A transient activation of our nonactivating controls must not destroy
+        // their target/capture before a click or slider event is dispatched.
+        if ((foreground == overlay.Handle || foreground == popup.Handle) &&
+            target != IntPtr.Zero && NativeMethods.IsWindow(target))
+        {
+            RestoreTargetFocus();
+            foreground = NativeMethods.GetForegroundWindow();
+            if (foreground == overlay.Handle || foreground == popup.Handle)
+                return;
+        }
         if (IsOwn(foreground))
         {
             Hide();
@@ -113,7 +147,7 @@ public sealed class WindowTracker : IDisposable
                 return;
             }
         }
-        if (!overlay.Place(bounds))
+        if ((moved || !overlay.IsVisible) && !overlay.Place(bounds))
         {
             log.Write("OverlayPosition", target, error: System.Runtime.InteropServices.Marshal.GetLastWin32Error());
             Hide();
